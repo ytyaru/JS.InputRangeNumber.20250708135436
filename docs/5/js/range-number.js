@@ -17,6 +17,10 @@ class HTMLInputRangeNumberElement extends HTMLElement {
         this._.setT.n.parse = (v)=>v.toString();
         console.log(this._)
         this.#makeEl();
+//        this._.el.number.readOnly = true;
+//        this._.el.number.disabled = true;
+//        this._.el.range.disabled = true;
+//        this._.el.host.disabled = true;
     }
     connectedCallback() {
         this.append(this._.el.host);
