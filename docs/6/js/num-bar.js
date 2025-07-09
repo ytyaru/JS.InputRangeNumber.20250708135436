@@ -15,9 +15,10 @@ class HTMLNumBarElement extends HTMLElement {
         this._.setT.s.parse = (v)=>Number(v);
         this._.setT.n.is = (v)=>('number'===typeof v && !Number.isNaN(v));
         this._.setT.n.parse = (v)=>v.toString();
-        this._.build = {s: '',
-            blur: {s:'', head:'number', primary:''},
-            focus: {s:'', head:'number', primary:''},
+        this._.build = {s: 'n nR',
+            primary: 'number', secondary: 'range', pos: ['number', 'range'],
+            blur: {s:'n', head:'number', isHeadNumber: true, primary:'number', secondary: '', pos: ['number']},
+            focus: {s:'nR', head:'number', isHeadNumber: true, primary:'range', secondary: 'number', pos: ['number', 'range']},
         }
         console.log(this._)
         this.#makeEl();
@@ -82,9 +83,75 @@ class HTMLNumBarElement extends HTMLElement {
                 this._.build.s = match[0];
                 this._.build.blur.s = items[0];
                 this._.build.focus.s = items[1];
-            }
+                const [hasN,hasR] = 'N R'.split(' ').map(v=>items[1].indexOf(v));
+                this._.build.primary = hasN && hasR || !hasN && !hasR ? '' : (hasN ? 'number' : (hasR ? 'range' : ''));
+                this._.build.secondary = 'number'===this._.build.primary ? 'range' : ('range'===this._.build.primary ? 'number' : '');
+//                const hasN = items[1].indexOf('N');
+//                const hasR = items[1].indexOf('R');
+                //this._.build.primary = items[1].indexOf('N') ? 'number' : (items[1].indexOf('R') ? 'range' : '');
+                this._.build.blur.head = 'n N'.some(v=>v===items[0]) ? 'number' : 'range';
+                this._.build.blur.isHeadNumber = 'n N'.some(v=>v===items[0]);
+                this._.build.focus.head = 'n N'.some(v=>v===items[1]) ? 'number' : 'range';
+                this._.build.focus.isHeadNumber = 'n N'.some(v=>v===items[1]);
+                this._.build.blur.handler = (e)=>{
+//                    e.target.disabled = true;
+//                    e.target.style.display = 'none';
+                    this._.el[this._.build.secondary].disabled = true;
+                    this._.el[this._.build.secondary].style.display = 'none';
+                    this.#swapNumberRange(this._.build.blur.isHeadNumber);
+                };
+                this._.build.focus.handler = (e)=>{
+                    this.#swapNumberRange(this._.build.blur.isHeadNumber);
+                    this._.el[this._.build.secondary].disabled = false;
+                    this._.el[this._.build.secondary].style.display = 'inline';
+//                this._.el[this._.build.secondary].focus();//secondaryから戻ってきた場合、この要素より前の要素に遷移できなくなる！
+                };
         }
         this._.build.s
+    }
+    #build() {
+        if (this._.build.primary && this._.build.secondary) {
+            const [primary, secondary] = 'primary secondary'.map(n=>this._.el[this._.build[n]]);
+//            const primary = this._.el[this._.build.primary];
+//            const secondary = this._.el[this._.build.primary];
+//            this._.el[this._.build.primary].addEventListener()
+            primary.readOnly = true;
+            primary.addEventListener('focus', this._.build.focus.handler);
+            secondary.disabled = true;
+            secondary.style.display = 'none';
+            secondary.addEventListener('blur', this._.build.blur.handler);
+            /*
+            primary.addEventListener('focus', (e)=>{
+                this.#swapNumberRange(this._.build.blur.isHeadNumber);
+                this._.el[this._.build.secondary].disabled = false;
+                this._.el[this._.build.secondary].style.display = 'inline';
+//                this._.el[this._.build.secondary].focus();//secondaryから戻ってきた場合、この要素より前の要素に遷移できなくなる！
+            });
+            secondary.disabled = true;
+            secondary.style.display = 'none';
+            secondary.addEventListener('blur', (e)=>{
+                e.target.disabled = true;
+                e.target.style.display = 'none';
+                this.#swapNumberRange(this._.build.blur.isHeadNumber);
+            });
+            */
+        }
+    }
+    #swapNumberRange(isHeadNumber) {// number/rangeの位置を入れ替える
+        if (isHeadNumber) {
+            if (this._.el.number.previousElementSibling) {
+                this._.el.number.parentElement.insertBefore(this._.el.number, this._.el.range);
+            }
+        } else {
+            if (this._.el.range.previousElementSibling) {
+                this._.el.range.parentElement.insertBefore(this._.el.range, this._.el.number);
+            }
+        }
+    }
+    #swapNumberRange(evNm, isHeadNumber) {
+        this._.build[evNm].isHeadNumber
+        this._.build.blur.isHeadNumber
+        this._.build.focus.isHeadNumber
     }
     #isValid(v){}
     attributeChangedCallback(property, oldValue, newValue) {
@@ -131,6 +198,6 @@ class HTMLNumBarElement extends HTMLElement {
         }
         return input;
     }
-    #resizeNumber() {this._.el.number.style.width = `${parseFloat(getComputedStyle(this._.el.number).fontSize) * this._.d.s.max.length}px`;}
+    #resizeNumber() {this._.el.number.style.width = `${Math.round(parseFloat(getComputedStyle(this._.el.number).fontSize) * this._.d.s.max.length)}px`;}
 }
 customElements.define('num-bar', HTMLNumBarElement);
